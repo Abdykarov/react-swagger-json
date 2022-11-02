@@ -1,0 +1,1530 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "B2b Portal platform API",
+    "version": "0.8.1",
+    "description": "Collection of APIs supporting the B2B portal platform for phase one.\nIt will be split into single API per microservice.\n\nIn general we want several independent APIs:\n- Employees\n- Organizations\n- Customers\n- Downtimes\n- Incidents\n- Service Catalgoue\n\nAnd one specific endpoint for the B2B backend\n- B2B BFF\n\nOpenpoints:\n- listing of portfolios\n- definition of returning meta data about response length (http header, meta+data attribute)\n",
+    "contact": {
+      "name": "API design",
+      "email": "robert.smol@tekies.eu"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.cez.cz/b2b-portal",
+      "description": "Production server"
+    },
+    {
+      "url": "https://testapi.cez.cz/b2b-portal",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "parameters": {
+      "idParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Id"
+        },
+        "example": null
+      },
+      "uuidParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/UUID"
+        }
+      },
+      "sort": {
+        "name": "sortBy",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/SortParam"
+        }
+      },
+      "kpjm": {
+        "name": "kpjm",
+        "in": "path",
+        "description": "Filter output by providing `kpjm` identificator.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^[A-Za-z0-9]{3,10}$",
+          "example": "lapakmar"
+        }
+      },
+      "kpjmList": {
+        "name": "kpjm",
+        "in": "query",
+        "description": "Filter output by providing list of `kpjm`.",
+        "required": false,
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "qtsmolrob",
+            "lapakmar",
+            "kopecnytom"
+          ]
+        }
+      },
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Specify the number of returned items",
+        "schema": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 20
+        },
+        "example": 50
+      },
+      "offset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Specify the offset from the start",
+        "schema": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10000,
+          "default": 0
+        },
+        "example": 20
+      },
+      "filter": {
+        "name": "filter",
+        "in": "query",
+        "required": false,
+        "description": "Rules for filtering the result",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "first_name": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "pattern": "^[A-Za-z0-9]{1,100}$"
+                },
+                "last_name": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "pattern": "^[A-Za-z0-9]{1,100}$"
+                }
+              }
+            }
+          }
+        }
+      },
+      "customersFilter": {
+        "name": "filter",
+        "in": "query",
+        "required": false,
+        "description": "Rules for filtering the result",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "ic": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "orgUnitId": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "%Elektrárna%",
+                "orgUnit": [
+                  69204000
+                ]
+              }
+            }
+          }
+        }
+      },
+      "filterEmployees": {
+        "name": "filter",
+        "in": "query",
+        "required": false,
+        "description": "Rules for filtering the result based on KPJM identities",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "kpjm": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "orgUnitId": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "example": {
+              "kpjm": [
+                "qtsmolrob",
+                "lapakmar",
+                "kopecnytom"
+              ],
+              "orgUnitId": [
+                69204000
+              ]
+            }
+          }
+        }
+      },
+      "findIncidents": {
+        "name": "findIncidents",
+        "in": "query",
+        "required": false,
+        "description": "Rules for filtering the results",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "MAJOR_INCIDENT",
+                    "ANNOUNCEMENT"
+                  ]
+                },
+                "affected_customers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "example": "27b97804-0d80-435c-9e86-931654960e41"
+                  }
+                },
+                "status": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "CLOSED"
+                  ]
+                },
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-08-10T13:00:00.000Z"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-08-11T13:00:00.000Z"
+                },
+                "affected_ci": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "example": [
+                    21506,
+                    28496
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "filterDowntimes": {
+        "name": "filter",
+        "in": "query",
+        "required": false,
+        "description": "Rules for filtering the results",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "PERIODIC",
+                    "ANNOUNCEMENT"
+                  ]
+                },
+                "affected_customers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "example": "27b97804-0d80-435c-9e86-931654960e41"
+                  }
+                },
+                "status": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "APPROVED"
+                  ]
+                },
+                "portfolio": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "PRODUCTION"
+                  ]
+                },
+                "impact": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "UNAVAILABILITY"
+                  ]
+                },
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-08-10T13:00:00.000Z"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-08-11T13:00:00.000Z"
+                },
+                "affected_ci": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "example": [
+                    21506,
+                    28496
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "serviceCatalogueSearch": {
+        "name": "filter",
+        "in": "query",
+        "required": false,
+        "description": "Search for given items",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "maxLength": 50,
+              "pattern": "^[A-Za-z0-9]{3,10}$",
+              "example": "OCR"
+            },
+            "ci": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 50,
+                "pattern": "^[A-Za-z0-9]{3,50}$"
+              },
+              "example": [
+                215700
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 10,
+            "pattern": "^[0-9]{3,10}$"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^[A-Za-z0-9]{3,10}$"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "SortParam": {
+        "type": "string",
+        "maxLength": 100,
+        "pattern": "^[0-9]{3,100}$",
+        "example": "start"
+      },
+      "Id": {
+        "type": "string",
+        "maxLength": 10,
+        "pattern": "^[0-9]{3,10}$"
+      },
+      "UUID": {
+        "type": "string",
+        "format": "uuid",
+        "maxLength": 36,
+        "pattern": "^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$",
+        "example": "a2a603b6-41bf-41d8-a502-a8c11e4a1e77"
+      },
+      "Locations": {
+        "type": "string",
+        "maxLength": 100,
+        "pattern": "^[A-Za-z0-9]{1,100}$"
+      },
+      "Portfolio": {
+        "type": "string",
+        "enum": [
+          "INTERNAL",
+          "CENTRAL",
+          "PRODUCTION",
+          "TRADING",
+          "CUSTOMER_SYSTEMS",
+          "DISTRIBUTION",
+          "UNKNOWN"
+        ]
+      },
+      "OrganizationUnit": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Servicedesk Id for given unit + Title of the supporting unit",
+            "example": "69_204000 - Řízení vztahů se zákazníky ČPR",
+            "maxLength": 1000,
+            "pattern": "^[A-Za-z0-9]{1,1000}$"
+          }
+        }
+      },
+      "Employee": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kpjm": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "first name": {
+            "type": "string",
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9]{1,100}$"
+          },
+          "last_name": {
+            "type": "string",
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9]{1,100}$"
+          },
+          "photoURL": {
+            "type": "string",
+            "maxLength": 1000,
+            "pattern": "^[A-Za-z0-9]{1,1000}$"
+          },
+          "presence": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "string",
+            "maxLength": 1000,
+            "pattern": "^[A-Za-z0-9]{1,1000}$"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "organizationUnit": {
+            "$ref": "#/components/schemas/OrganizationUnit"
+          }
+        },
+        "example": {
+          "kpjm": "lapakmar",
+          "first_name": "Marek",
+          "last_name": "Lapák",
+          "photoURL": "https://gravatar.com/avatar/d78997c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+          "presence": true,
+          "position": "Produktový manažer",
+          "email": "marek.lapak@cez.cz",
+          "phone": 420725209030,
+          "organizationUnit": {
+            "title": "69_204000 - Řízení vztahů se zákazníky ČPR"
+          }
+        }
+      },
+      "Downtime": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "maxLength": 20,
+            "pattern": "^[A-Za-z0-9-]{1,1000}$",
+            "description": "Timestamp - start of downtime"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp - end of downtime"
+          },
+          "main_ci": {
+            "type": "string",
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9]{1,100}$",
+            "description": "Title application or configuration item"
+          },
+          "main_product": {
+            "type": "string",
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9]{1,100}$",
+            "description": "Title product (not applicable if main_ci is configuration item)"
+          },
+          "main_svc": {
+            "type": "string",
+            "maxLength": 1000,
+            "pattern": "^[A-Za-z0-9]{1,1000}$",
+            "description": "Title service (not applicable if main_ci is configuration item)"
+          },
+          "main_systems": {
+            "type": "array",
+            "description": "Title systems (not applicable if main_ci is configuration item)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "category": {
+            "type": "string",
+            "description": "Type of downtime",
+            "enum": [
+              "ANNOUNCEMENT",
+              "PERIODIC",
+              "REGULAR",
+              "EMERGENCY"
+            ]
+          },
+          "sd_ticket": {
+            "type": "integer",
+            "description": "Latest service desk change Id describing/modifing exactly this instance"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of service desk change Id for creating/modifing instance of this downtime",
+            "enum": [
+              "APPROVED",
+              "REJECTED",
+              "IN_APPROVAL"
+            ]
+          },
+          "request_type": {
+            "type": "string",
+            "description": "Type of service desk change for this downtime instance",
+            "enum": [
+              "CREATE",
+              "CANCEL",
+              "INSTANCE_EXCEPTION",
+              "INSTANCE_CANCEL"
+            ]
+          },
+          "former_requests": {
+            "type": "array",
+            "description": "List of service desk change which creates/modifies in the past this downtime instance",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sd_ticket": {
+                  "type": "string",
+                  "description": "Service desk change Id"
+                },
+                "request_type": {
+                  "type": "string",
+                  "description": "Type of service desk change",
+                  "enum": [
+                    "CREATE",
+                    "CANCEL",
+                    "INSTANCE_EXCEPTION",
+                    "INSTANCE_CANCEL"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Status of service desk change Id",
+                  "enum": [
+                    "APPROVED",
+                    "REJECTED",
+                    "IN_APPROVAL"
+                  ]
+                }
+              }
+            }
+          },
+          "coordinator": {
+            "type": "string",
+            "description": "ID of the employee responsible for coordination"
+          },
+          "work_description": {
+            "type": "string",
+            "description": "Description of work to be performed"
+          },
+          "impact": {
+            "type": "string",
+            "description": "Type of impact on the end users",
+            "enum": [
+              "NO_IMPACT",
+              "UNVAILABILITY",
+              "SHORT_OUTAGES",
+              "OUTAGE"
+            ]
+          },
+          "impact_description": {
+            "type": "string",
+            "description": "Detailed description of impact"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of downtime"
+          },
+          "locations": {
+            "type": "array",
+            "description": "Locations in which downtime is relevant",
+            "items": {
+              "$ref": "#/components/schemas/Locations"
+            }
+          },
+          "portfolios": {
+            "type": "array",
+            "description": "Customer portfolios in which downtime is relevant",
+            "items": {
+              "$ref": "#/components/schemas/Portfolio"
+            }
+          },
+          "affected_customers": {
+            "type": "array",
+            "description": "Affected customers",
+            "items": {
+              "$ref": "#/components/schemas/Organization"
+            }
+          },
+          "affected_ci": {
+            "type": "array",
+            "description": "List of configuration items from CMDB affected by this incident",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "ci": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "PRODUCT",
+                    "SERVICE",
+                    "SYSTEM",
+                    "APPLICATION",
+                    "CI"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "start": "2022-08-10T13:00:00.000Z",
+          "end": "2022-08-12T08:00:00.000Z",
+          "main_ci": "Infrastrukturní aplikace - systémy",
+          "main_product": "Interní aplikace ICTS",
+          "main_svc": "S509",
+          "main_systems": [
+            "Zapezpečená komunikace _p"
+          ],
+          "category": "ANNOUNCEMENT",
+          "sd_ticket": 21056,
+          "status": "IN_APPROVAL",
+          "request_type": "CREATE",
+          "former_requests": [
+            {
+              "sd_ticket": 1653,
+              "request_type": "CREATE",
+              "status": "APPROVED"
+            },
+            {
+              "sd_ticket": 1655,
+              "request_type": "CANCEL",
+              "status": "REJECTED"
+            }
+          ],
+          "coordinator": "rzehulkamar",
+          "work_description": "Upgrade OS všech DNS serverů v lokálních DC.",
+          "impact_type": "NO_IMPACT",
+          "impact_description": "Vždy bude aktualizován pouze jeden DNS server.",
+          "description": "Postupný upgrade OS všech dostupných serverů. Přesný čas bude zadándo teamsové\nskupiny L1 L2.\n",
+          "locations": [
+            "Loc 1",
+            "Loc 2",
+            "Loc 3"
+          ],
+          "portfolios": [
+            "INTERNAL",
+            "CENTRAL",
+            "PRODUCTION",
+            "TRADING",
+            "CUSTOMER_SYSTEMS",
+            "DISTRIBUTION"
+          ],
+          "affected_customers": [
+            {
+              "id": "27b97804-0d80-435c-9e86-931654960e41",
+              "title": "ČEZ Prodej a.s."
+            }
+          ],
+          "affected_ci": [
+            {
+              "title": "DNS1EDE",
+              "ci": 215785,
+              "category": "CI"
+            },
+            {
+              "title": "DNS1EDU",
+              "ci": 210164,
+              "category": "CI"
+            },
+            {
+              "title": "DNS1EHO",
+              "ci": 212115,
+              "category": "CI"
+            },
+            {
+              "title": "DNS1ELE",
+              "ci": 215666,
+              "category": "CI"
+            },
+            {
+              "title": "DNS1EME",
+              "ci": 2150365,
+              "category": "CI"
+            },
+            {
+              "title": "Zabezpečená komunikace _p",
+              "ci": 2150642,
+              "category": "SYSTEM"
+            },
+            {
+              "title": "Infrastruturní aplikace - systémy",
+              "ci": 2150632,
+              "category": "APPLICATION"
+            },
+            {
+              "title": "S509",
+              "ci": 2150648,
+              "category": "SERVICE"
+            }
+          ]
+        }
+      },
+      "Incident": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of moment, whene incident is entered into operation diary"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of moment, whene incident is resolved (not applicable for open incidents)"
+          },
+          "closure_forecast": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Forecast of incident resolution (this timestamp is typically entered for open incidents)"
+          },
+          "op_diary_id": {
+            "type": "integer",
+            "description": "Unique Id which is assigned to this item in operation diary"
+          },
+          "sd_ticket": {
+            "type": "integer",
+            "description": "Unique Id of incident in service desk (only for incidents, not applicable for announcement)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Type of the incident",
+            "enum": [
+              "ANNOUNCEMENT",
+              "INCIDENT",
+              "MAJOR_INCIDENT"
+            ]
+          },
+          "main_ci": {
+            "type": "string",
+            "description": "Title application or configuration item"
+          },
+          "main_product": {
+            "type": "string",
+            "description": "Title product (not applicable if main_ci is configuration item)"
+          },
+          "main_svc": {
+            "type": "string",
+            "description": "Title service (not applicable if main_ci is configuration item)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Public message describing incident"
+          },
+          "status": {
+            "type": "string",
+            "description": "Status of incident",
+            "enum": [
+              "OPEN",
+              "CLOSED"
+            ]
+          },
+          "root_cause": {
+            "type": "string",
+            "description": "Root cause of incident identified typically after incident closure"
+          },
+          "affected_customers": {
+            "type": "array",
+            "description": "List of affected customers (typically derived from affected_ci / products)",
+            "items": {
+              "$ref": "#/components/schemas/Organization"
+            }
+          },
+          "affected_ci": {
+            "type": "array",
+            "description": "List of configuration items from CMDB affected by this incident",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "ci": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "PRODUCT",
+                    "SERVICE",
+                    "SYSTEM",
+                    "APPLICATION",
+                    "CI"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "start": "2022-07-20T13:40:13.000Z",
+          "end": "",
+          "closure_forecast": "2022-07-20T15:42:13.000Z",
+          "op_diary_id": 44456674,
+          "sd_ticket": 5276343,
+          "category": "MAJOR_INCIDENT",
+          "main_ci": "ss00013do8000-khdo4",
+          "main_product": "",
+          "main_svc": "",
+          "description": "Nedostupnost serveru na VMware z duvodu odpojeni disku",
+          "status": "CLOSED",
+          "root_cause": "Incorrect administraton action",
+          "affected_customers": [
+            {
+              "id": "27b97804-0d80-435c-9e86-931654960e41",
+              "title": "ČEZ Prodej a.s."
+            },
+            {
+              "id": "0e6e6b03-5160-42f2-9f34-04142f218eae",
+              "title": "ČEZ Distribuce a.s."
+            }
+          ],
+          "affected_ci": [
+            {
+              "title": "ss00013do8000-khdo4",
+              "ci": 21506,
+              "category": "CI"
+            }
+          ]
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "4055e39b-4552-441a-a553-bc0b917f3061"
+          },
+          "title": {
+            "type": "string",
+            "description": "Customer organization name",
+            "example": "Elektrárna Dukovany II, a. s."
+          },
+          "orgUnit": {
+            "$ref": "#/components/schemas/OrganizationUnit"
+          }
+        }
+      },
+      "ServiceCatalogue": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Identifikátor produktu"
+          },
+          "ci": {
+            "type": "string",
+            "description": "Servicesdesk items Id"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the catalogue item"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "SERVICE",
+              "PRODUCT",
+              "APPLICATION",
+              "SYSTEM",
+              "CI",
+              "OTHER"
+            ]
+          },
+          "parent_ci": {
+            "type": "string",
+            "description": "Logical parent of the CI"
+          }
+        },
+        "example": {
+          "title": "OCR",
+          "code": "AP003112",
+          "description": "Vytěžování textů pomocí OCR",
+          "category": "APPLICATION",
+          "ci": 215765
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "The specified resource was not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "ErrorNotFound": {
+                "$ref": "#/components/examples/ErrorNotFound"
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "ErrorNotAuthorized": {
+                "$ref": "#/components/examples/ErrorNotAuthorized"
+              }
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "ErrorServer": {
+                "$ref": "#/components/examples/ErrorServer"
+              }
+            }
+          }
+        }
+      },
+      "CustomerProductsResponseList": {
+        "description": "List of products for given customer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ServiceCatalogue"
+              },
+              "example": [
+                {
+                  "title": "Digitální platforma",
+                  "code": "H001",
+                  "description": "Všechny aplikace spadající pod tento produkt",
+                  "ci": 215700,
+                  "parent_ci": 215800
+                },
+                {
+                  "title": "Platforma internetu věcí",
+                  "code": "H002",
+                  "description": "Všechny aplikace spadající pod tento produkt",
+                  "ci": 215701,
+                  "parent_ci": 215800
+                }
+              ]
+            }
+          }
+        }
+      },
+      "CustomersResponseList": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Organization"
+              }
+            },
+            "example": [
+              {
+                "id": "4055e39b-4552-441a-a553-bc0b917f3061",
+                "title": "Elektrárna Dukovany II, a. s.",
+                "organizationUnit": {
+                  "id": 69204000,
+                  "title": "Řízení vztahů se zákazníky ČPR"
+                }
+              },
+              {
+                "id": "4badab7e-c0fd-402b-9ea9-fde1745092ee",
+                "title": "Elektrárna Temelín, a. s.",
+                "organizationUnit": {
+                  "id": 69204000,
+                  "title": "Řízení vztahů se zákazníky ČPR"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "EmployeeResponseList": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Employee"
+              }
+            },
+            "example": [
+              {
+                "kpjm": "lapakmar",
+                "first_name": "Marek",
+                "last_name": "Lapák",
+                "photoURL": "https://gravatar.com/avatar/d78997c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+                "presence": true,
+                "position": "Produktový manažer",
+                "email": "marek.lapak@cez.cz",
+                "phone": 420725209030,
+                "organizationUnit": {
+                  "id": 69204000,
+                  "title": "Řízení vztahů se zákazníky ČPR"
+                }
+              },
+              {
+                "kpjm": "kopecnytom",
+                "first_name": "Tomáš",
+                "last_name": "Kopečný",
+                "photoURL": "https://gravatar.com/avatar/d78934c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+                "presence": false,
+                "position": "UX designer",
+                "email": "tomas.kopecny@cez.cz",
+                "phone": "+420776\"",
+                "organizationUnit": {
+                  "id": 69204000,
+                  "title": "Řízení vztahů se zákazníky ČPR"
+                }
+              },
+              {
+                "kpjm": "qtsmolrob",
+                "first_name": "Robert",
+                "last_name": "Šmol",
+                "photoURL": "https://gravatar.com/avatar/d78934c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+                "presence": false,
+                "position": "Architect",
+                "email": "robert.smol@tekies.eu",
+                "phone": 420776762378,
+                "organizationUnit": {
+                  "id": 69204000,
+                  "title": "Řízení vztahů se zákazníky ČPR"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "IncidentsListResponse": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Incident"
+              }
+            }
+          }
+        }
+      },
+      "DowntimesListResponse": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Downtime"
+              }
+            }
+          }
+        }
+      },
+      "ServiceCatalogueListResponse": {
+        "description": "Listing of service catalogue\n",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ServiceCatalogue"
+              },
+              "example": [
+                {
+                  "title": "OCR",
+                  "code": "AP003112",
+                  "description": "Vytěžování textů pomocí OCR",
+                  "category": "APPLICATION",
+                  "ci": 215765,
+                  "parent_ci": 215700
+                },
+                {
+                  "title": "RPA",
+                  "code": "AP003225",
+                  "description": "Robotics Process Automation",
+                  "category": "APPLICATION",
+                  "ci": 215766,
+                  "parent_ci": 215700
+                },
+                {
+                  "title": "Digitální platforma",
+                  "code": "H001",
+                  "description": "Všechny aplikace spadající pod tento produkt",
+                  "category": "PRODUCT",
+                  "ci": 215700,
+                  "parent_ci": 215800
+                },
+                {
+                  "title": "Platforma internetu věcí",
+                  "code": "H002",
+                  "description": "Všechny aplikace spadající pod tento produkt",
+                  "category": "PRODUCT",
+                  "ci": 215701,
+                  "parent_ci": 215800
+                },
+                {
+                  "title": "Rozvoj a inovace",
+                  "code": "S502",
+                  "description": "Všechny produkty spadající pod tuto službu",
+                  "category": "SERVICE",
+                  "ci": 215800,
+                  "parent_ci": null
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "ErrorNotFound": {
+        "value": {
+          "code": 404,
+          "message": "Resource not found"
+        }
+      },
+      "ErrorNotAuthorized": {
+        "value": {
+          "code": 401,
+          "message": "User is not authorized"
+        }
+      },
+      "ErrorServer": {
+        "value": {
+          "code;": 500,
+          "message": "Server error"
+        }
+      },
+      "EmployeeMarekLapak": {
+        "value": {
+          "id": "3203242342",
+          "first_name": "Marek",
+          "last_name": "Lapák",
+          "photoURL": "https://gravatar.com/avatar/d78997c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+          "presence": true,
+          "position": "Produktový manažer",
+          "email": "marek.lapak@cez.cz",
+          "phone": 420725209030,
+          "organizationUnit": "Řízení vztahů se zákazníky ČPR"
+        }
+      },
+      "EmployeeRobertSmol": {
+        "value": {
+          "id": "3203242341",
+          "first_name": "Robert",
+          "last_name": "Šmol",
+          "photoURL": "https://gravatar.com/avatar/d78934c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+          "presence": false,
+          "position": "Architect",
+          "email": "robert.smol@tekies.eu",
+          "phone": 420776762378,
+          "organizationUnit": "Řízení vztahů se zákazníky ČPR"
+        }
+      },
+      "ListExample": {
+        "value": [
+          "id:1",
+          "id:2",
+          {
+            "$ref": "#/components/examples/EmployeeRobertSmol"
+          }
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/ict-employees": {
+      "get": {
+        "description": "List of employees with support for pagination and filtering",
+        "tags": [
+          "ICT Employees"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/kpjmList"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          },
+          {
+            "$ref": "#/components/parameters/filterEmployees"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EmployeeResponseList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/ict-employees/{kpjm}": {
+      "get": {
+        "description": "List detail of the specific employee",
+        "tags": [
+          "ICT Employees"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/kpjm"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                },
+                "example": {
+                  "kpjm": "lapakmar",
+                  "first_name": "Marek",
+                  "last_name": "Lapák",
+                  "photoURL": "https://gravatar.com/avatar/d78997c04ea0fe6bdf126852b4a5ee38?s=400&d=robohash&r=x",
+                  "presence": true,
+                  "position": "Produktový manažer",
+                  "email": "marek.lapak@cez.cz",
+                  "phone": 420725209030,
+                  "organizationUnit": {
+                    "id": 69204000,
+                    "title": "Řízení vztahů se zákazníky ČPR"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/ict-customers": {
+      "get": {
+        "description": "Get list of CEZ ICT supported organizations",
+        "tags": [
+          "ICT Supported organizations"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          },
+          {
+            "$ref": "#/components/parameters/customersFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CustomersResponseList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/ict-customers/{id}/products": {
+      "get": {
+        "description": "List supported products for given customer",
+        "tags": [
+          "ICT Supported organizations"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          },
+          {
+            "$ref": "#/components/parameters/idParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CustomerProductsResponseList"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/ict-incidents": {
+      "get": {
+        "description": "Incidents reported by user",
+        "tags": [
+          "Incidents"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          },
+          {
+            "$ref": "#/components/parameters/sort"
+          },
+          {
+            "$ref": "#/components/parameters/findIncidents"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/IncidentsListResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/ict-downtimes": {
+      "get": {
+        "description": "Planned outages",
+        "tags": [
+          "Downtimes"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          },
+          {
+            "$ref": "#/components/parameters/filterDowntimes"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DowntimesListResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/ict-service-catalogue": {
+      "get": {
+        "description": "List of Produc, Application and System components",
+        "tags": [
+          "Service Catalogue"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/serviceCatalogueSearch"
+          },
+          {
+            "name": "withRelations",
+            "in": "query",
+            "required": false,
+            "description": "If true, result will include all parent relations",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ServiceCatalogueListResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
